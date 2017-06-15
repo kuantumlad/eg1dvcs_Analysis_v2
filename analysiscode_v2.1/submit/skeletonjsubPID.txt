@@ -1,0 +1,13 @@
+JOBNAME:  bcPID
+OS:       centos7
+TRACK:    debug
+MEMORY:   2048 MB
+PROJECT:  clas12
+
+COMMAND: /u/home/bclary/batch_submit/batch/execute_job.csh inputfile.root 
+
+OTHER_FILES:
+/u/home/bclary/eg1analysis/SKIMprotocol/analysiscode_v2.1/stage1PID
+
+INPUT_DATA: inputfile.root
+INPUT_FILES:

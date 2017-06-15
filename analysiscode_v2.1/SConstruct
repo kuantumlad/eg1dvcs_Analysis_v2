@@ -1,0 +1,20 @@
+import os
+#import glob
+
+env = Environment(ENV=os.environ)
+env.ParseConfig("root-config --cflags --glibs")
+env.Append(CXXFLAGS = '-std=c++11')
+env.Dump()
+env.Append(CCFLAGS = ['-O2','-g'])
+env.Append(CPPPATH = ['/u/home/bclary/eg1analysis/SKIMprotocol/analysiscode_v2.1/include'])
+
+#env.Append(CPPPATH = ['/usr/lib64/'], LIBPATH = ['/usr/lib64/'],LIBS = ['sqlite3'])
+
+env.Append(CPPPATH = ['/u/apps/sqlite/sqlite-3.13.0/include/'], LIBPATH = ['/u/apps/sqlite/sqlite-3.13.0/lib'],LIBS = ['sqlite3'])
+env.Append(CPPPATH = ['/u/apps/root/6.08.00/root/include/'], LIBPATH = ['/u/apps/root/6.08.00/root/lib/'],LIBS = ['Geom'])
+env.Program('stage1PID',Glob('src/*.cc'))
+
+
+
+
+

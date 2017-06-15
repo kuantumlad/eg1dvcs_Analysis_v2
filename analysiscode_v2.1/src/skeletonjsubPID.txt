@@ -1,0 +1,22 @@
+JOBNAME:  bcPID
+OS:       centos7
+TRACK:    debug
+MEMORY:   2048 MB
+PROJECT:  clas12
+
+COMMAND:  ./stage1PID /lustre/expphy/work/hallb/claseg1dvcs/pass1/v3/root/  inputfile.root 
+
+OTHER_FILES:
+/u/home/bclary/eg1analysis/SKIMprotocol/analysiscode_v2
+
+OUTPUT_DATA: pidoutfile.root
+OUTPUT_TEMPLATE: /lustre/expphy/volatile/halla/sbs/bclary/eg1analysis/eg1dvcs_output/pid_output/PID*
+
+INPUT_DATA: inputfile.root
+INPUT_FILES:
+
+
+
+
+
+
