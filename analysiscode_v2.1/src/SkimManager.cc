@@ -40,6 +40,7 @@
 #include <sstream>   // std::string
 #include <iomanip>   
 #include <cmath>
+#include <string>
 SkimManager::SkimManager(){
 
   // TFile *newskimfile;
@@ -174,20 +175,20 @@ void SkimManager::SkimByFile(const char *tempdirname, const char *temppath ){ //
   filename = file->GetName();
   
     if( !file->IsDirectory() && filename.EndsWith(ext) ){
-    originalfile = new TFile(filetoskim);
-
-    if(originalfile == 0){
+      originalfile = new TFile(filetoskim);
+      
+      if(originalfile == 0){
       //std::cout << "NULL pointer for originalfile" << std::endl;
       //continue;
-      exit(0);
-    }
-    originaltree = (TTree*)originalfile->Get("h22");
-    originalChain = (TChain*)originalfile->Get("h22");
-    if( originaltree == 0 || originalChain == 0 ){
-      //std::cout << "NULL pointer for originaltree or originalChain " << std::endl;
-      //continue;
-      exit(0);
-    }
+	exit(0);
+      }
+      originaltree = (TTree*)originalfile->Get("h22");
+      originalChain = (TChain*)originalfile->Get("h22");
+      if( originaltree == 0 || originalChain == 0 ){
+	//std::cout << "NULL pointer for originaltree or originalChain " << std::endl;
+	//continue;
+	exit(0);
+      }
     
     sfiletoskim = (std::string)filetoskim;   
     found = sfiletoskim.find_last_of("/");
@@ -199,7 +200,7 @@ void SkimManager::SkimByFile(const char *tempdirname, const char *temppath ){ //
     //See if the file is in the Good File database (list is taken from Andrey) !
     std::string checkfile  = "\""+filebasename+"\"";
     eg1runcheck.OpenDB();
-    TString s_runid = eg1runcheck.Query("GoodFileWithFC", "GoodFileID", checkfile, "GoodFileID"); // word of warning, compiler preferes type std::string over TString as input
+    TString s_runid = eg1runcheck.Query("BiselliFileWithFC", "BiselliFileID", checkfile, "BiselliFileID"); // word of warning, compiler preferes type std::string over TString as input
     eg1runcheck.CloseDB();
 
     //This checks if input file is a MC file

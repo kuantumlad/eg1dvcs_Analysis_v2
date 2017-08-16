@@ -848,12 +848,12 @@ bool CCSCCut::candidate( Eventh22 &particle, Int_t gindex){
   //std::cout << " CCSCCut  el time - " << el_time << std::endl;
   //std::cout << " CCSCCut offsettiming - " << offsettiming << std::endl;
    
-if( el_time <= 2.0 ){
-  // std::cout << " CCSCCut  - " << particle.cc_t[gindex] << std::endl;
-  //std::cout << " CCSCCut  - " << particle.cc_r[gindex]/SpeedOfLight << std::endl;
-  //std::cout << " CCSCCut  - " << particle.sc_t[gindex] << std::endl;
-  //std::cout << " CCSCCut  - " << particle.sc_r[gindex]/SpeedOfLight << std::endl;
-  
+  if( el_time <= 2 ){
+    // std::cout << " CCSCCut  - " << particle.cc_t[gindex] << std::endl;
+    //std::cout << " CCSCCut  - " << particle.cc_r[gindex]/SpeedOfLight << std::endl;
+    //std::cout << " CCSCCut  - " << particle.sc_t[gindex] << std::endl;
+    //std::cout << " CCSCCut  - " << particle.sc_r[gindex]/SpeedOfLight << std::endl;
+    
     npass++;
     return true;
   }
@@ -1308,7 +1308,7 @@ IC Cuts
 
  */
 ICCut::ICCut(){
-  std::cout << " using default constructor " << std::endl;
+  //std::cout << " using default constructor " << std::endl;
 }
 
 ICCut::ICCut( Calculator tempcalc ) : Cuts(tempcalc){

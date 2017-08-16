@@ -1,3 +1,14 @@
+//#################################################
+//
+//    Written By Brandon Clary
+//    Date: unknown ~ May?
+//    Purpose: To use the FinalGoodRuns_GroupAB_NH3_vtest.txt file
+//             for creating a list of runs to use in adding up the 
+//             FC values. 
+//
+//
+//
+//#################################################
 #include <TMath.h>
 #include <TH1D.h>
 #include <TH2D.h>

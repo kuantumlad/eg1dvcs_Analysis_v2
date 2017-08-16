@@ -324,7 +324,7 @@ void NormalizationCheck( const char* rootfile ){
   std::cout << " The size of the run map for nh3 is " << fc_run_nh3.size() << std::endl;
 
   std::cout << " Counting the FC charge for the runs used " << std::endl;
-  // Get the FC Normalization values for this random set
+  //Get the FC Normalization values for this random set
   Double_t fc_tot_nh3 = 0.0, fc_tot_c12 = 0.0;
   Double_t fc_tot_nh3_2 = 0.0, fc_tot_c12_2 = 0.0;
 
@@ -526,14 +526,14 @@ void NormalizationCheck( const char* rootfile ){
   h_DVCS_nh3_1->SetLineColor(kRed); 
   h_DVCS_nh3_1->Draw("hist");
   
-  c1->cd(4);
+  /*c1->cd(4);
   h_DVCS_c12_1->SetTitle("Number of DVCS events for MM2 < 0 " );
   h_DVCS_c12_1->GetXaxis()->SetTitle("Number of DVCS events for C12 Set 1 for MM2_{epX} < 0" );
   h_DVCS_c12_1->Scale(1.0/fc_tot_c12);
   h_DVCS_c12_1->SetFillColorAlpha(kBlue+2,0.7);
   h_DVCS_c12_1->SetLineColor(kBlue+2);
   h_DVCS_c12_1->Draw("hist");
-
+  */
   /*  c1->cd(4);
   h_phang_nh3->SetTitle("Angle between Measured and Calculated Photon for NH3 ");
   h_phang_nh3->GetXaxis()->SetTitle("#theta [deg]");
@@ -543,7 +543,7 @@ void NormalizationCheck( const char* rootfile ){
   h_phang_nh3->Draw("hist");
   h_phang_c12->Draw("same");
   */
-  /* c1->cd(4);
+  c1->cd(4);
   h_missingE_c12->Scale(1.0/16138300000.0);
   h_missingE_nh3->Scale(1.0/107756000000.0);
   h_missingE_nh3->SetTitle("Missing Energy NH3");
@@ -552,7 +552,7 @@ void NormalizationCheck( const char* rootfile ){
   h_missingE_c12->SetLineColor(kBlue+2);
   h_missingE_nh3->Draw("hist");
   h_missingE_c12->Draw("same");
-  */
+  
   TCanvas *c2 = new TCanvas("c2","",1600,800);
   c2->Divide(2,2);
   c2->cd(1);

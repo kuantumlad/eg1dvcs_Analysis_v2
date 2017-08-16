@@ -1,246 +1,234 @@
-#include "TMath.h"
+//###########################################################
+//
+//
+// Created by: Brandon Clary
+// Written: 7/18/2017
+// Purpose: Calculate the raw normalized target spin asymmetry
+//          and the corrected asym using the dilution factor 
+//          and the polarization.
+//
+//
+//
+//###########################################################
 #include "TFile.h"
 #include "TChain.h"
 #include "TTree.h"
-#include "tDVCS.C"
+#include "TH1D.h"
+#include "TMath.h"
+#include "TCanvas.h"
+#include "TStyle.h"
 #include "TGraph.h"
+#include "TGraphErrors.h"
 #include "TMultiGraph.h"
+#include "TColor.h"
+#include "TLine.h"
+#include "TLorentzVector.h"
+#include "TF1.h"
 #include "TLegend.h"
 
+#include "tPID.C"
+
+#include <vector>
+#include <map>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
-#include <map>
-#include <iterator>
-
-std::map<Double_t, bool> goodruns;
-
-void GoodRunSet(){
-
-  const char* path = "/u/home/bclary/eg1analysis/SKIMprotocol/analysiscode_v2.2/fcup_analysis/FinalGoodRunsGroupAB.txt";
-  std::ifstream myfile;
-  myfile.open(path,std::ios_base::in);
-
-  std::string line;
-
-  if( myfile.is_open() ){
-
-    while ( getline(myfile,line) ){
-      if( line[0] == '#' ) continue;
-      
-      double run, fc0, fc1;
-      std::stringstream first(line);
-      first >> run >> fc0 >> fc1;
-      goodruns[run] = true;
-      
-    }
-
-  }
-
-}
 
 
-void asym( const char* rootfile ){
 
-  TChain *fchain = new TChain("tDVCS");
-  fchain->Add(rootfile);
 
-  tDVCS *treevar = new tDVCS(fchain);
+void asym( const char* rootfiles ){
 
-  TH1D* h_PP = new TH1D("h_PP","",10,0,360);
-  TH1D* h_PN = new TH1D("h_PN","",10,0,360);
-  TH1D* h_NP = new TH1D("h_NP","",10,0,360);
-  TH1D* h_NN = new TH1D("h_NN","",10,0,360);
+  TChain *fchain = new TChain("tPID");
+  fchain->Add(rootfiles);
 
-  TH1D* h_P = new TH1D("h_P","",10,0.0,360.0);
-  TH1D* h_N = new TH1D("h_N","",10,0.0,360.0);
+  tPID *treevar = new tPID(fchain);
+  std::cout << ">> Processing " << fchain->GetEntries() << " entries " << std::endl;
+  Long64_t nnentries = fchain->GetEntries();
 
-  TH1D *h_tarpol_pos = new TH1D("h_tarpol_pos","",100,50,90);
-  TH1D *h_tarpol_neg = new TH1D("h_tarpol_neg","",100,-150,-50);
 
-  GoodRunSet();
+  //HISTOGRAMS FOR TARGET-SPIN ASYM
+  TH1D *h_asy_P = new TH1D("h_asy_P","",10,0.0,360.0);
+  TH1D *h_asy_N = new TH1D("h_asy_N","",10,0.0,360.0);
 
-  // double tp_P = 0.0;
-  //double tp_N = 0.0;
-  //double count_P = 0.0;
-  /// double count_N = 0.0;
-  std::map<double,double> m_eventrate, m_tarpol;
+  //COUNT THE RATES TO DOUBLE CHECK
+  Double_t dvcs_rate_ga = 0;
+  Double_t dvcs_rate_nh3_ga = 0;
+  Double_t dvcs_rate_c12_ga = 0;
+  Double_t dvcs_rate_gb = 0;
+  Double_t dvcs_rate_nh3_gb = 0;
+  Double_t dvcs_rate_c12_gb = 0;
 
-  for( Long64_t nn = 0; nn < fchain->GetEntries(); nn++ ){
+  for (Long64_t nn = 0; nn< nnentries; nn++){
     fchain->GetEntry(nn);
+
+    std::string period = (std::string)*(treevar->periodID);    
+    bool groupB = period == 'B';
+    bool groupA = period == 'A';
+
+    //if( groupB && (treevar->FC0 > 1000 && treevar->FC1 > 1000) ){ //REMOVED BC NEED TO MATCH ANGELLA'S " NO IMPROVEMENTS " - JOO :/
+      if ( nn%1000000 == 0 ) { std::cout << nn << std::endl; } 	
+      std::string target = (std::string)(*treevar->targetType);   
+
+      Double_t Run = treevar->run;
+      Double_t q2 = treevar->qq;
+      Double_t x = treevar->xb;
+      Double_t t = treevar->t_;
+      Double_t w = treevar->w_;
+      Double_t mm = treevar->MM;
+      Double_t mm2epg = treevar->MM2epg;
+      Double_t photon_E = treevar->ph_E;
+      Double_t phi = treevar->Dephi;
+      Double_t perpX = treevar->perpx;
+      Double_t perpY = treevar->perpy;
+      Double_t deltheta = treevar->deltatheta;
+      Double_t targetPol = treevar->targetPolarization;
+      Double_t photonTop = treevar->photonTopology;
+      Double_t asym_phi = (treevar->phi_)*(180.0/3.14159);
+
+      bool q2_pass = q2 > 1;
+      bool x_pass1 = x > 0;
+      bool x_pass2 = x < 1.1;
+      bool t_pass = -t < q2;
+      bool w_pass = w > 2;
+      bool phE_pass = photon_E > 1;
+      bool phi_pass = fabs(phi)/3.14159 * 180.0 < 2;
+      bool mm2epg_pass = fabs( mm2epg ) < 0.1;
+      bool mm2_pass = fabs( mm ) < 0.3;
+      bool deltatheta_pass = deltheta/3.14159 * 180.0 < (1.0);
+      bool q2_t_pass = q2 > -t;
+      bool photonEC = photonTop == 2;
+      bool photonIC = photonTop == 1;
+
+      bool trans_mntm_pass = TMath::Sqrt(perpX*perpX + perpY*perpY) < 0.15;
+      bool target_nh3t = target == "NH3T";
+      bool target_nh3b = target == "NH3B";
+      bool target_nh3s = target == "NH3S";
+      bool target_nh3 = target_nh3t || target_nh3b;
+      bool target_c12 = target == "C12";
+      
+      TLorentzVector el_lv( treevar->el_px, treevar->el_py, treevar->el_pz, treevar->el_E);
+      TLorentzVector pr_lv( treevar->pr_px, treevar->pr_py, treevar->pr_pz, treevar->pr_E);
+      TLorentzVector ph_lv( treevar->ph_px, treevar->ph_py, treevar->ph_pz, treevar->ph_E);
+      TLorentzVector el_b( 0.0, 0.0, treevar->beamEnergy, treevar->beamEnergy);
+      TLorentzVector target_lv( 0.0, 0.0, 0.0, 0.9382720);
+      
+      TLorentzVector missing_lv = el_b + target_lv - (el_lv + pr_lv + ph_lv );
+      Double_t missing_energy = missing_lv.E();  
+
+      //DVCS CUTS FOR NH3
+      if( q2_pass && w_pass && phE_pass && phi_pass && trans_mntm_pass && mm2epg_pass && deltatheta_pass && mm2_pass){
+
+	if( groupA ){
+	  dvcs_rate_ga++;
+	  if( target_c12 ){
+	    dvcs_rate_c12_ga++;
+	  }
+	  if( target_nh3t || target_nh3b ){
+	    dvcs_rate_nh3_ga++;
+	  }
+	}
+	
+	if( groupB ){
+	  dvcs_rate_gb++;
+	  if( target_c12 ){
+	    dvcs_rate_c12_gb++;
+	  }
+	  if( target_nh3t || target_nh3b ){
+	    dvcs_rate_nh3_gb++;
+	  }
+	}
+
+	if( targetPol > 0 ){
+	  h_asy_P->Fill(asym_phi);
+	}
+	if( targetPol < 0 ){
+	  h_asy_N->Fill(asym_phi);
+	}
+      }
+      //}
+  }
+
+  Double_t fc_p = 5.59802;
+  Double_t fc_n = 5.90968;
+  Double_t dilution_b = 0.74;
+  Double_t tarP = 0.81;
+  Double_t tarN = 0.75;
+
+  std::vector<Double_t> asym_y, asym_x;
+  std::vector<Double_t> raw_asym_y, raw_asym_x;
+
+  for( int b = 1 ; b <= 10; b++ ){
+    Int_t P = h_asy_P->GetBinContent(b);
+    Int_t N = h_asy_N->GetBinContent(b);
+
+    Double_t P_fcn = P/fc_p;
+    Double_t N_fcn = N/fc_n;
+
+    Double_t numerator = P_fcn - N_fcn;
+    Double_t denominator = dilution_b*(tarN*P_fcn + tarP*N_fcn);
     
-    //Work with only run group B and NH3 targets for now. Can be changed later
-    std::string target = (std::string)(*treevar->TargetType);
-    if( *treevar->PeriodID == 'B'
-	&& (target == "NH3T" || target == "NH3B" || target == "NH3S") 
-	&& goodruns[treevar->RunNumber] ){
-      Int_t hel = treevar->helicity;
-      Float_t tarpol = treevar->TarPol;
+    asym_y.push_back(numerator/denominator);
+    asym_x.push_back( h_asy_P->GetBinCenter(b) );
 
-      m_eventrate[treevar->RunNumber] += 1;
-      m_tarpol[treevar->RunNumber] = tarpol;
+    raw_asym_y.push_back( (P_fcn-N_fcn)/(P_fcn+N_fcn) );
+    raw_asym_x.push_back(h_asy_P->GetBinCenter(b));
 
-      if( tarpol > 0 ){ h_P->Fill((treevar->Phi)*(180.0/TMath::Pi()) ); }
-      else if( tarpol < 0 ) {h_N->Fill((treevar->Phi)*(180.0/TMath::Pi()) );}
+  } 
 
-      if( tarpol > 0 && hel == 0 ){
-	h_PP->Fill( (treevar->Phi)*(180.0/TMath::Pi()) );
-      }
-      if( tarpol > 0 && hel == 1 ){
-	h_PN->Fill( (treevar->Phi)*(180.0/TMath::Pi()) );
-      }
-      if( tarpol < 0 && hel == 0 ){
-	h_NP->Fill( (treevar->Phi)*(180.0/TMath::Pi()) );
-      }
-      if( tarpol < 0 && hel == 1 ){
-	h_NN->Fill( (treevar->Phi)*(180.0/TMath::Pi()) );
-      }
-    }
-  }
+  std::cout << " CREATING TGRAPH " << std::endl;
+  TCanvas *c1 = new TCanvas("c1","",800,600);
+  c1->SetGrid();
+  TLegend *leg = new TLegend(0.75,0.75,0.89,0.89);
+  leg->SetFillColor(0);
+  leg->SetBorderSize(0);
+  leg->SetTextSize(0.025);
 
-  // Commented out and not included in the asym bc at this stage the analysis
-  // is responsible for getting the correct normalization values.
-  /*  Double_t  weighted_pol_P = 0.0;
-  Double_t  weighted_pol_N = 0.0;
-  Double_t running_sum_P = 0.0;
-  Double_t running_sum_N = 0.0;
-  std::map<double,double>::iterator it = m_eventrate.begin();
-  while ( it != m_eventrate.end() ){
-    Double_t run = it->first;
-    Double_t tp = m_tarpol[run];
-    if( tp > 0 ){
-      Double_t weight_P = it->second;
-      weighted_pol_P+=(tp*weight_P);
-      running_sum_P+=it->second;
-    }
-    if( tp < 0 ){
-      Double_t weight_N = it->second;
-      weighted_pol_N+=(tp*weight_N);
-      running_sum_N+=it->second;
-    }
-    ++it;
-  }
+  TGraph *g_asym = new TGraph(asym_x.size(), &(asym_x[0]), &(asym_y[0]));
+  g_asym->SetName("Asym");
+  g_asym->SetTitle(" Target-Spin Asymmetry ");
+  g_asym->GetXaxis()->SetTitle("#phi [deg]");
+  g_asym->GetXaxis()->CenterTitle();
+  g_asym->GetYaxis()->SetTitle("Target-Spin Asymmetry");
+  g_asym->GetYaxis()->CenterTitle();
+  g_asym->SetMarkerStyle(20);
+  g_asym->SetMarkerSize(0.7);
+  g_asym->SetMarkerColor(kBlue+2);
+  g_asym->Draw("AP");
 
-  std::cout << weighted_pol_P << " - " << running_sum_P << " ==> " << weighted_pol_P/running_sum_P << std::endl;
-  std::cout << weighted_pol_N << " - " << running_sum_N <<  " ==> " << weighted_pol_N/running_sum_N << std::endl;
-  */
-  Double_t tp_P =1.0;//  (1.0/100.0)*(weighted_pol_P/running_sum_P);
-  Double_t tp_N =1.0;//  (-1.0/100.0)*(weighted_pol_N/running_sum_N);
+  TGraph *g_raw_asym = new TGraph(raw_asym_x.size(), &(raw_asym_x[0]), &(raw_asym_y[0]));
+  g_raw_asym->SetName("Raw Asym");
+  g_raw_asym->SetTitle("Raw Target-Spin Asymmetry");
+  g_raw_asym->GetXaxis()->SetTitle("#phi [deg]");
+  g_raw_asym->GetXaxis()->CenterTitle();
+  g_raw_asym->GetYaxis()->SetTitle("Target-Spin Asymmetry");
+  g_raw_asym->GetYaxis()->CenterTitle();
+  g_raw_asym->SetMarkerStyle(20);
+  g_raw_asym->SetMarkerSize(0.7);
+  g_raw_asym->SetMarkerColor(kRed);
+  g_raw_asym->Draw("P");
 
-  TH1D *h_PPPN = new TH1D("h_PPPN","",10,0,360);
-  TH1D *h_NPNN = new TH1D("h_NPNN","",10,0,360);
-  TH1D *h_top = new TH1D("h_top","",10,0,360);
-  TH1D *h_bot = new TH1D("h_bot","",10,0,360);
-  TH1D *h_asym = new TH1D("h_asym","",10,0,360);
+  leg->AddEntry(g_raw_asym,"Raw TSA","P");
+  leg->AddEntry(g_asym,"Corrected TSA","P");
+  leg->Draw("same");  
+
+
+  std::cout << " >> FINAL DVCS RATE " << std::endl;
+  std::cout << " >> Group A Results " << std::endl;  
+  std::cout << " From all targets " << dvcs_rate_ga << std::endl;
+  std::cout << " From NH3 target " << dvcs_rate_nh3_ga << std::endl;
+  std::cout << " FROM C12 target " << dvcs_rate_c12_ga << std::endl;
+
+  std::cout << " >> Group B Results " << std::endl;  
+  std::cout << " From all targets " << dvcs_rate_gb << std::endl;
+  std::cout << " From NH3 target " << dvcs_rate_nh3_gb << std::endl;
+  std::cout << " FROM C12 target " << dvcs_rate_c12_gb << std::endl;
+
+  std::cout << " >> Group A + B " << std::endl;
+  std::cout << " From all targets " << dvcs_rate_ga + dvcs_rate_gb << std::endl;
+  std::cout << " From NH3 target " << dvcs_rate_nh3_ga + dvcs_rate_nh3_gb << std::endl;
+  std::cout << " FROM C12 target " << dvcs_rate_c12_ga + dvcs_rate_c12_gb << std::endl;
   
-  Double_t dfB = 0.978053;//0.928;
 
-  TCanvas *c1 = new TCanvas("c1","canvas",1600,800);
-  gStyle->SetOptStat(0);
-  //  c1->Divide(2,2);
-  //c1->cd(1);
-  h_PPPN->Add(h_PP,h_PN,1.0,1.0);//1.0/2.69372,1.0/2.69169);
-  // h_PPPN->Draw();
-  //c1->cd(2);
-  h_NPNN->Add(h_NP,h_NN,1.0,1.0);//1.0/2.6908,1.0/2.68963);
-  //h_NPNN->Draw();  
-  //c1->cd(3);
-
-  //Changed this to h_P and h_N as I removed the beam helicity status requirement for target-spin asy.
-  h_top->Add(h_P,h_N,1.0,-1.0);
-  h_bot->Add(h_P,h_N,dfB*1.0*tp_N,dfB*1.0*tp_P);
-  h_asym->Divide(h_top,h_bot,1.0,1.0);
-  //  h_asym->Draw("P");
-
-  double fc_pp = 2.69372;
-  double fc_pn = 2.69169;
-  double fc_np = 2.6908;
-  double fc_nn = 2.68963;
-
-  double fc_p = 5.58682;
-  double fc_n = 5.83815;
-
-  std::vector<double> asym_y_all, asym_x_all;
-  std::vector<double> asym_y_clean;
-  for( int bin = 1; bin <=10; bin++){
-    
-    double_t p = h_P->GetBinContent(bin);
-    double_t n = h_N->GetBinContent(bin);
-    //    double_t np = h_NP->GetBinContent(bin);
-    //double_t nn = h_NN->GetBinContent(bin);
-    
-    //    std::cout<< ">>>Bin" << bin << " " << pp << " " << pn << " " << np << " " << nn << std::endl;
-    
-    double p_fcn = p/fc_p;
-    double n_fcn = n/fc_n;
-    //    double np_fcn = np/fc_np;
-    //double nn_fcn = nn/fc_nn;
-    
-    //First calculate the numerator of the asym expression
-    double numerator = p_fcn - n_fcn;// - np_fcn - nn_fcn;
-
-    double numerator2 = p - n;// - np -nn;
-    double denominator2 = p + n;// + np + nn;
-
-    //Then calulcate the denominator taking into account the dillution factor and average target polarization.
-    //The dilution factor and avg tarPol as of 5/20/2017 are taken from the PRL paper
-    double dilute_b = 0.773418;
-    double tarP = 1.0;//0.81;
-    double tarN = 1.0;//0.75;
-    double denominator = dilute_b*(tarN*(p_fcn) + tarP*(n_fcn) );
-    
-    //The asymmetry for each bin (asym_y) of phi (asym_x) is thus
-    asym_y_all.push_back(numerator/denominator);
-    asym_y_clean.push_back(numerator2/denominator2);
-    asym_x_all.push_back( h_P->GetBinCenter(bin) );
-    
-  }
-
-  TCanvas *c2 = new TCanvas("c2","can2",1600,800);
-  TGraph *gtemp = new TGraph(asym_x_all.size(), &(asym_x_all[0]), &(asym_y_all[0]) );
-  gtemp->SetName("Raw Target-Spin Asymmetry Normalized");
-  gtemp->SetTitle("Raw Target-Spin Asymmetry Normalized");
-  gtemp->GetXaxis()->SetTitle("#phi [Deg]");
-  gtemp->SetMarkerStyle(20);
-  gtemp->SetMarkerSize(0.85);
-  gtemp->SetMarkerColor(kBlue+2);
-  gtemp->SetLineColor(kBlue+2);
-  //  gtemp->Draw("AP");
-  TGraph *gtemp2 = new TGraph(asym_x_all.size(), &(asym_x_all[0]), &(asym_y_clean[0]));
-  gtemp2->SetName("Raw Target-Spin Asymmetry Unnormalized");
-  gtemp2->SetTitle("Raw Target-Spin Asymmetry Unnormalized");
-  gtemp2->SetMarkerStyle(20);
-  gtemp2->SetMarkerSize(0.7);
-  gtemp2->SetMarkerColor(kRed);
-
-  TLegend *leg1 = new TLegend( 0.70, 0.725, 0.86, 0.875 );
-  leg1->SetFillColor(0);
-  leg1->SetBorderSize(0);
-  leg1->SetTextSize(0.025);
-  leg1->AddEntry(gtemp,"Normalized Asym","P");
-  leg1->AddEntry(gtemp2,"Unnormalized Asym","P");
-
-  TMultiGraph *mg = new TMultiGraph();
-  mg->Add(gtemp,"P");
-  mg->Add(gtemp2,"P");
-  mg->Draw("AP");
-  mg->SetTitle("Raw Target-Spin Asymmetry Group B");
-  mg->GetXaxis()->SetTitle("#phi [Deg]");
-  mg->GetYaxis()->SetTitle("Asym_{meas}");
-  mg->GetXaxis()->CenterTitle();
-  mg->GetYaxis()->CenterTitle();
-  leg1->Draw("same");
-
-
-
-  c2->SaveAs("raw_ts_asym_unnorm.pdf");      
-  std::cout << " Done " << std::endl;  
 }
-
-/*>>FC Normalization factors to scale the DVCS event rates in the target-spin asymmetry
->> PP: 2.69372e+10
->> PN: 2.69169e+10
->> NP: 2.6908e+10
->> NN: 2.68963e+10
-*/

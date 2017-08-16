@@ -19,6 +19,7 @@
 //            quality runs. Finally a TGraph is saved to illustrate
 //            the seperation.
 //
+// ***** FILE IS OBSOLETE!!!! DO NOT USE!!!!!*****
 //
 /////////////////////////////////////////////////////////
 #include "TMath.h"

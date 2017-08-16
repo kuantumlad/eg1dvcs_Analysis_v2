@@ -13,7 +13,8 @@ MergePrompt (){
     echo ">> This script will aid you in merging root files. "
     echo ">> Merge PID, DVCS, OR MC files ?"
     echo ">> Please enter PID, DVCS, or MC."
-    read analysisType
+    read analysisType 
+
 }
 
 
@@ -55,11 +56,11 @@ DVCSMerge (){
 	if ((RunNum <= 59161 || RunNum < 59221))
 	then
 	    echo "$RunNum in Group A Run"
-	    hadd -k -a h_eg1_groupA.root $DVCSPREFIX$RunNum$EXT
+	    hadd -k -a -f h_eg1_groupA.root $DVCSPREFIX$RunNum$EXT
 	elif ((RunNum <= 59221 || RunNum < 60223))
 	then
 	    echo "$RunNum in Goup B Run"
-	    hadd -k -a h_eg1_groupB.root $DVCSPREFIX$RunNum$EXT
+	    hadd -k -a -f h_eg1_groupB.root $DVCSPREFIX$RunNum$EXT
 	else
 	    echo "Group C"
 	fi
@@ -67,7 +68,7 @@ DVCSMerge (){
 
     echo ">> DVCS files succesfully merged."
     echo ">> Now merging Group A and B together" 
-    hadd -k -a h_eg1_groupAB.root h_eg1_groupA.root h_eg1_groupB.root
+    hadd -k -a -f h_eg1_groupAB.root h_eg1_groupA.root h_eg1_groupB.root
 
     echo ">> Complete"
     exit

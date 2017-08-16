@@ -142,18 +142,18 @@ void AnalysisManager::AnalyzeByFile(const char *tempfilename, const char *temppa
     
     std::cout << " Run Number: " << runnumber << std::endl;
     //See if the run is even good!
-    eg1runcheck.OpenDB();
-    TString s_runid = eg1runcheck.Query("FCRunParameters","RunID",runnumber );
-    TString s_fc0 = eg1runcheck.Query("FCRunParameters","FC0",runnumber );
-    TString s_fc1 = eg1runcheck.Query("FCRunParameters","FC1",runnumber );
-    eg1runcheck.CloseDB();
-    std::cout << s_runid << " " << s_fc0 << " " << s_fc1 << std::endl;
+    //eg1runcheck.OpenDB();
+    //TString s_runid = eg1runcheck.Query("TargetConfiguration","RunID", runnumber);
+    //TString s_fc0 = eg1runcheck.Query("FCRunParameters","FC0",runnumber );
+    //TString s_fc1 = eg1runcheck.Query("FCRunParameters","FC1",runnumber );
+    //eg1runcheck.CloseDB();
+    //std::cout << s_runid << " " << s_fc0 << " " << s_fc1 << std::endl;
     //std::cout << "At BDVCSHistograms init" << std::endl;
     BDVCSHistograms bdvcshist;
     bdvcshist.CreateDVCSHistograms(&outfile);
 
     //COMMENT OUT TO USE EVERYFILE
-    if( atoi(s_runid) == runnumber ){
+    //if( atoi(s_runid) == runnumber ){
     //if ( true ){ 
     //TFile outfile(dvcsoutfile,"recreate");
       //      std::cout << " File exists...proceeding to analyze " << std::endl;
@@ -168,11 +168,11 @@ void AnalysisManager::AnalyzeByFile(const char *tempfilename, const char *temppa
       outfile.Write();
       outfile.Close();
       //skimfile->Close();
-    }
-    else{
-      std::cout << ">> Run " << runnumber << " is not in the Target Configuration List that was provided " << std::endl;
-      originalfile->Close();
-    }
+      //}
+      //else{
+      //std::cout << ">> Run " << runnumber << " is not in the Target Configuration List that was provided " << std::endl;
+      //originalfile->Close();
+      //}
     filecounter++;
   }
   std::cout << "Saving histogram file " << std::endl;

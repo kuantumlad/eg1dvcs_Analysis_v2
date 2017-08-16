@@ -672,9 +672,9 @@ void Calculator::SetFCRunValues( Int_t temprun, std::string tempfilename ){
     //std::cout << " hwp " <<  s_wpposition << std::endl;
     //std::cout << "setting fc values " << tempfilename  << std::endl;
     std::string filefordb = "\"" + tempfilename + "\"";
-    TString s_fc0 = eg1rundata.Query("GoodFileWithFC","FC0",filefordb,"GoodFileID");
+    TString s_fc0 = eg1rundata.Query("BiselliFileWithFC","FC0",filefordb,"BiselliFileID");
     //std::cout << " fc0 " << s_fc0 << std::endl;
-    TString s_fc1 = eg1rundata.Query("GoodFileWithFC","FC1",filefordb,"GoodFileID");
+    TString s_fc1 = eg1rundata.Query("BiselliFileWithFC","FC1",filefordb,"BiselliFileID");
     //std::cout << " fc1 " << s_fc1 << std::endl;
     eg1rundata.CloseDB();
     waveplatePos = atoi(s_wpposition);
